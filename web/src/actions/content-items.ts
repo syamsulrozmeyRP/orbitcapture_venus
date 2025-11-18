@@ -2,8 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { randomUUID } from "crypto";
 
-import { ContentStatus } from "@prisma/client";
+import { ContentStatus, Prisma } from "@prisma/client";
 
 import { getWorkspaceContext } from "@/lib/workspace";
 import { withUserContext } from "@/lib/rls";
@@ -27,6 +28,15 @@ const rescheduleSchema = z.object({
 const statusSchema = z.object({
   contentItemId: z.string().cuid(),
   status: z.nativeEnum(ContentStatus),
+});
+
+const convertChatSchema = z.object({
+  personaId: z.string().cuid(),
+  title: z.string().min(3).max(140),
+  prompt: z.string().min(5).max(2000),
+  outline: z.string().max(6000).optional(),
+  body: z.string().min(20).max(10000),
+  ideas: z.array(z.string().max(400)).optional(),
 });
 
 function parseDate(value?: string | null) {
@@ -136,5 +146,111 @@ export async function updateContentStatusAction(prevState: ActionState, formData
     return { status: "success", message: "Status updated." } satisfies ActionState;
   } catch (error) {
     return handleError(error);
+  }
+}
+
+type ConvertResult = ActionState & { contentItemId?: string };
+
+function toEditorDocument(payload: z.infer<typeof convertChatSchema>) {
+  const randomId = () => randomUUID();
+
+  const blocks: Array<{ id: string; type: string; data: Record<string, unknown> }> = [];
+
+  if (payload.title) {
+    blocks.push({
+      id: randomId(),
+      type: "header",
+      data: { text: payload.title, level: 2 },
+    });
+  }
+
+  blocks.push({
+    id: randomId(),
+    type: "paragraph",
+    data: { text: payload.prompt },
+  });
+
+  if (payload.body) {
+    payload.body
+      .split(/\n{2,}/)
+      .map((chunk) => chunk.trim())
+      .filter(Boolean)
+      .forEach((chunk) => {
+        blocks.push({
+          id: randomId(),
+          type: "paragraph",
+          data: { text: chunk },
+        });
+      });
+  }
+
+  if (payload.outline) {
+    const items = payload.outline
+      .split(/\n|-/)
+      .map((line) => line.replace(/^[-\s]+/, "").trim())
+      .filter(Boolean);
+    if (items.length > 0) {
+      blocks.push({
+        id: randomId(),
+        type: "list",
+        data: { style: "unordered", items },
+      });
+    }
+  }
+
+  if (payload.ideas && payload.ideas.length > 0) {
+    blocks.push({
+      id: randomId(),
+      type: "list",
+      data: { style: "unordered", items: payload.ideas },
+    });
+  }
+
+  return {
+    time: Date.now(),
+    version: "2.28.0",
+    blocks,
+  };
+}
+
+export async function convertChatToContentAction(payload: z.infer<typeof convertChatSchema>): Promise<ConvertResult> {
+  try {
+    const { user, activeMembership } = await getWorkspaceContext();
+    if (!user || !activeMembership) {
+      return { status: "error", message: "Select a workspace first." };
+    }
+
+    const parsed = convertChatSchema.parse(payload);
+    const document = toEditorDocument(parsed);
+
+    const content = await withUserContext(user.id, (tx) =>
+      tx.contentItem.create({
+        data: {
+          workspaceId: activeMembership.workspaceId,
+          createdById: user.id,
+          personaId: parsed.personaId,
+          title: parsed.title,
+          description: parsed.prompt,
+          aiHeadline: parsed.title,
+          aiOutline: parsed.outline,
+          body: document as Prisma.InputJsonValue,
+        },
+        select: { id: true },
+      }),
+    );
+
+    revalidatePath("/app/planner");
+    revalidatePath("/app/editor");
+
+    return {
+      status: "success",
+      message: "Draft created from chat.",
+      contentItemId: content.id,
+    };
+  } catch (error) {
+    return {
+      status: "error",
+      message: error instanceof Error ? error.message : "Unable to convert conversation.",
+    };
   }
 }

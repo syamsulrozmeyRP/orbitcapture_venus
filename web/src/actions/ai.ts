@@ -48,6 +48,8 @@ export async function generatePlanIdeasAction(_: PlanResponse, formData: FormDat
       return { status: "error", message: "OPENROUTER_API_KEY is not configured." };
     }
 
+    const requestId = typeof formData.get("requestId") === "string" ? (formData.get("requestId") as string) : undefined;
+
     const parsed = planSchema.parse({
       personaSummary: formData.get("personaSummary") ?? undefined,
       channel: formData.get("channel") ?? undefined,
@@ -76,14 +78,38 @@ export async function generatePlanIdeasAction(_: PlanResponse, formData: FormDat
         "X-Title": "ContentOS Planner",
       },
       body: JSON.stringify({
-        model: "openrouter/anthropic/claude-3.5-sonnet",
+        model: "anthropic/claude-3.5-haiku",
         messages,
         temperature: 0.6,
       }),
     });
 
     if (!response.ok) {
-      throw new Error("Failed to generate AI plan.");
+      let details: string | undefined;
+      try {
+        const errorPayload = await response.json();
+        details =
+          typeof errorPayload?.error?.message === "string"
+            ? errorPayload.error.message
+            : typeof errorPayload?.message === "string"
+              ? errorPayload.message
+              : JSON.stringify(errorPayload);
+      } catch {
+        details = await response.text();
+      }
+      console.error("OpenRouter plan generation failed", response.status, details);
+      return {
+        status: "error",
+        requestId,
+        message:
+          response.status === 401
+            ? "OpenRouter rejected the API key. Double-check the key value or permissions."
+            : response.status === 402
+              ? "Workspace has insufficient OpenRouter credits for this model."
+              : details && details.length > 0
+                ? `OpenRouter error (${response.status}): ${details}`
+                : "Failed to generate AI plan.",
+      };
     }
 
     const payload = (await response.json()) as {
@@ -109,6 +135,7 @@ export async function generatePlanIdeasAction(_: PlanResponse, formData: FormDat
 
     return {
       status: "success",
+      requestId,
       headline,
       outline,
       ideas,
@@ -116,6 +143,7 @@ export async function generatePlanIdeasAction(_: PlanResponse, formData: FormDat
   } catch (error) {
     return {
       status: "error",
+      requestId: typeof formData.get("requestId") === "string" ? (formData.get("requestId") as string) : undefined,
       message: error instanceof Error ? error.message : "Unable to generate plan.",
     } satisfies PlanResponse;
   }
@@ -128,6 +156,8 @@ export async function generateEditorSuggestionsAction(_: PlanResponse, formData:
       excerpt: formData.get("excerpt"),
       focus: (formData.get("focus") as "seo" | "tone" | "persona") ?? "seo",
     });
+
+    const requestId = typeof formData.get("requestId") === "string" ? (formData.get("requestId") as string) : undefined;
 
     if (!process.env.OPENROUTER_API_KEY) {
       return { status: "error", message: "OPENROUTER_API_KEY missing." };
@@ -165,6 +195,7 @@ ${parsed.excerpt}`;
 
     return {
       status: "success",
+      requestId,
       headline,
       outline,
       ideas,
@@ -172,6 +203,7 @@ ${parsed.excerpt}`;
   } catch (error) {
     return {
       status: "error",
+      requestId: typeof formData.get("requestId") === "string" ? (formData.get("requestId") as string) : undefined,
       message: error instanceof Error ? error.message : "Unable to fetch suggestions.",
     } satisfies PlanResponse;
   }

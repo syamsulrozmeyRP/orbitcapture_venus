@@ -54,8 +54,11 @@ export async function upsertPersonaAction(prevState: ActionState = initialAction
       return { status: "error", message: "Select a workspace first." } satisfies ActionState;
     }
 
+    const personaIdInput = formData.get("personaId");
+    const personaId = typeof personaIdInput === "string" && personaIdInput.length > 0 ? personaIdInput : undefined;
+
     const parsed = personaSchema.parse({
-      personaId: formData.get("personaId") ?? undefined,
+      personaId,
       name: formData.get("name"),
       jobTitle: formData.get("jobTitle") ?? undefined,
       industry: formData.get("industry") ?? undefined,

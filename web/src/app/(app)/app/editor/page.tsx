@@ -1,11 +1,8 @@
-import Link from "next/link";
-
 import { withUserContext } from "@/lib/rls";
 import { getWorkspaceContext } from "@/lib/workspace";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { WorkspaceEmptyState } from "@/components/workspaces/workspace-empty-state";
+import { EditorHomeClient } from "@/components/editor/editor-home-client";
 
 export default async function EditorHomePage() {
   const { user, activeMembership } = await getWorkspaceContext();
@@ -22,55 +19,69 @@ export default async function EditorHomePage() {
     );
   }
 
-  const contentItems = await withUserContext(user.id, (tx) =>
-    tx.contentItem.findMany({
-      where: { workspaceId: activeMembership.workspaceId },
-      select: {
-        id: true,
-        title: true,
-        status: true,
-        updatedAt: true,
-        scheduledAt: true,
-      },
-      orderBy: { updatedAt: "desc" },
-    }),
+  const [personas, contentItems] = await withUserContext(user.id, (tx) =>
+    Promise.all([
+      tx.persona.findMany({
+        where: { workspaceId: activeMembership.workspaceId },
+        select: {
+          id: true,
+          name: true,
+          jobTitle: true,
+          industry: true,
+          goals: true,
+          pains: true,
+          voice: true,
+        },
+        orderBy: { createdAt: "desc" },
+      }),
+      tx.contentItem.findMany({
+        where: { workspaceId: activeMembership.workspaceId },
+        include: {
+          persona: { select: { name: true } },
+          createdBy: {
+            select: { firstName: true, lastName: true, email: true },
+          },
+        },
+        orderBy: { updatedAt: "desc" },
+        take: 40,
+      }),
+    ]),
   );
+
+  const personaOptions = personas.map((persona) => ({
+    id: persona.id,
+    name: persona.name,
+    jobTitle: persona.jobTitle,
+    industry: persona.industry,
+    goals: persona.goals,
+    pains: persona.pains,
+    voice: persona.voice,
+  }));
+
+  const contentPlans = contentItems.map((item) => ({
+    id: item.id,
+    title: item.title,
+    status: item.status,
+    channel: item.channel,
+    personaName: item.persona?.name ?? null,
+    writerName: formatMemberName(item.createdBy?.firstName, item.createdBy?.lastName, item.createdBy?.email),
+    scheduledAt: item.scheduledAt?.toISOString() ?? null,
+    updatedAt: item.updatedAt.toISOString(),
+  }));
+
+  const greetingName = user.firstName ?? user.lastName ?? user.email.split("@")[0];
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <p className="text-sm text-muted-foreground">Editor</p>
-          <h1 className="text-2xl font-semibold">Collaborative drafts</h1>
-        </div>
-        <Button asChild>
-          <Link href="/app/planner">Create new content</Link>
-        </Button>
-      </div>
-      <Card>
-        <CardHeader>
-          <CardTitle>Draft library</CardTitle>
-          <CardDescription>Jump into the Editor.js canvas for any planned item.</CardDescription>
-        </CardHeader>
-        <CardContent className="divide-y">
-          {contentItems.length === 0 && (
-            <p className="py-6 text-sm text-muted-foreground">No drafts yet—start from the planner.</p>
-          )}
-          {contentItems.map((item) => (
-            <div key={item.id} className="flex flex-wrap items-center justify-between gap-3 py-4">
-              <div>
-                <p className="font-medium">{item.title}</p>
-                <p className="text-xs text-muted-foreground">
-                  Status: {item.status.replace("_", " ")} · Updated {item.updatedAt.toLocaleDateString()}
-                </p>
-              </div>
-              <Button size="sm" variant="outline" asChild>
-                <Link href={`/app/editor/${item.id}`}>Open editor</Link>
-              </Button>
-            </div>
-          ))}
-        </CardContent>
-      </Card>
+      <EditorHomeClient greetingName={greetingName} personas={personaOptions} contentPlans={contentPlans} />
     </div>
   );
+}
+
+function formatMemberName(firstName?: string | null, lastName?: string | null, email?: string | null) {
+  if (firstName || lastName) {
+    return `${firstName ?? ""} ${lastName ?? ""}`.trim();
+  }
+  if (!email) return "AI Orbi";
+  return email.split("@")[0];
 }

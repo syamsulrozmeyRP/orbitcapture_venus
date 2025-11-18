@@ -1,6 +1,7 @@
 import { ActionState } from "@/lib/action-state";
 
 export type PlanResponse = ActionState & {
+  requestId?: string;
   headline?: string;
   outline?: string;
   ideas?: string[];
