@@ -8,10 +8,10 @@ import { cn } from "@/lib/utils";
 
 const navItems = [
   { label: "Dashboard", href: "/app/dashboard", icon: LayoutDashboard },
-  { label: "Analytics", href: "/app/analytics", icon: BarChart3 },
+  { label: "Analytics", href: "/app/analytics", icon: BarChart3, disabled: true },
   { label: "Planner", href: "/app/planner", icon: CalendarDays },
   { label: "Editor", href: "/app/editor", icon: PenTool },
-  { label: "Approvals", href: "/app/approvals", icon: CheckCircle2 },
+  { label: "Approvals", href: "/app/approvals", icon: CheckCircle2, disabled: true },
   { label: "Personas", href: "/app/personas", icon: Users2 },
   { label: "Workspaces", href: "/app/workspaces", icon: Settings2 },
   { label: "Members", href: "/app/workspaces#members", icon: Users },
@@ -32,22 +32,37 @@ export function AppSidebar() {
         {navItems.map((item) => {
           const Icon = item.icon;
           const targetPath = item.href.split("#")[0];
-          const isActive = pathname?.startsWith(targetPath ?? item.href);
+          const isDisabled = Boolean(item.disabled);
+          const isActive = !isDisabled && pathname?.startsWith(targetPath ?? item.href);
 
           return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition",
-                isActive
-                  ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-sm"
-                  : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+            <div key={item.href} className="flex">
+              {isDisabled ? (
+                <div
+                  aria-disabled="true"
+                  className={cn(
+                    "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground/40",
+                    "cursor-not-allowed border border-dashed border-sidebar-border/60 bg-transparent"
+                  )}
+                >
+                  <Icon className="h-4 w-4" />
+                  {item.label}
+                </div>
+              ) : (
+                <Link
+                  href={item.href}
+                  className={cn(
+                    "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition",
+                    isActive
+                      ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-sm"
+                      : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                  )}
+                >
+                  <Icon className="h-4 w-4" />
+                  {item.label}
+                </Link>
               )}
-            >
-              <Icon className="h-4 w-4" />
-              {item.label}
-            </Link>
+            </div>
           );
         })}
       </nav>

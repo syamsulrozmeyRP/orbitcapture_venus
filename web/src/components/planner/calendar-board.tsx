@@ -1,16 +1,17 @@
-'use client'
+'use client';
 
-import { useTransition } from "react";
+import { useEffect, useRef, useTransition } from "react";
 
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import listPlugin from "@fullcalendar/list";
+import type { CalendarApi } from "@fullcalendar/core";
 
 import { rescheduleContentItemAction } from "@/actions/content-items";
 
-type CalendarEvent = {
+export type CalendarEvent = {
   id: string;
   title: string;
   status: string;
@@ -21,20 +22,32 @@ type CalendarEvent = {
 
 type Props = {
   events: CalendarEvent[];
+  onCalendarReady?: (api: CalendarApi) => void;
 };
 
-const statusColors: Record<string, string> = {
-  IDEA: "bg-indigo-100 text-indigo-700 border-indigo-200",
-  BRIEFING: "bg-sky-100 text-sky-700 border-sky-200",
-  READY: "bg-emerald-100 text-emerald-700 border-emerald-200",
-  IN_REVIEW: "bg-amber-100 text-amber-700 border-amber-200",
-  APPROVED: "bg-green-100 text-green-700 border-green-200",
-  SCHEDULED: "bg-purple-100 text-purple-700 border-purple-200",
-  PUBLISHED: "bg-zinc-100 text-zinc-700 border-zinc-200",
+const statusAccentColors: Record<string, string> = {
+  IDEA: "bg-indigo-500",
+  BRIEFING: "bg-sky-500",
+  READY: "bg-emerald-500",
+  IN_REVIEW: "bg-amber-500",
+  APPROVED: "bg-green-500",
+  SCHEDULED: "bg-purple-500",
+  PUBLISHED: "bg-zinc-500",
 };
 
-export function CalendarBoard({ events }: Props) {
+export function CalendarBoard({ events, onCalendarReady }: Props) {
   const [isPending, startTransition] = useTransition();
+  const calendarRef = useRef<FullCalendar | null>(null);
+
+  useEffect(() => {
+    if (!onCalendarReady) return;
+    const id = requestAnimationFrame(() => {
+      if (calendarRef.current) {
+        onCalendarReady(calendarRef.current.getApi());
+      }
+    });
+    return () => cancelAnimationFrame(id);
+  }, [onCalendarReady]);
 
   const formattedEvents = events.map((event) => ({
     id: event.id,
@@ -44,16 +57,21 @@ export function CalendarBoard({ events }: Props) {
   }));
 
   return (
-    <div className="rounded-2xl border bg-card p-2">
+    <div className="planner-calendar overflow-hidden">
       <FullCalendar
+        ref={calendarRef}
         plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin, listPlugin]}
-        initialView="dayGridMonth"
-        headerToolbar={{
-          left: "prev,next today",
-          center: "title",
-          right: "dayGridMonth,timeGridWeek,listWeek",
-        }}
-        height="auto"
+        initialView="timeGridWeek"
+        headerToolbar={false}
+        height="100%"
+        contentHeight="auto"
+        expandRows
+        slotMinTime="07:00:00"
+        slotMaxTime="17:30:00"
+        slotDuration="01:00:00"
+        allDaySlot={false}
+        dayHeaderFormat={{ weekday: "short", day: "numeric" }}
+        slotLabelFormat={{ hour: "numeric", meridiem: "short" }}
         editable
         droppable
         selectable
@@ -72,13 +90,17 @@ export function CalendarBoard({ events }: Props) {
           const { status, channel, personaName } = arg.event.extendedProps as CalendarEvent;
 
           return (
-            <div
-              className={`rounded-lg border px-2 py-1 text-xs font-medium ${statusColors[status] ?? "bg-slate-100 text-slate-800"}`}
-            >
-              <p className="truncate">{arg.event.title}</p>
-              <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
-                {channel ?? "Multi"} · {personaName ?? "Persona"}
-              </p>
+            <div className="relative rounded-xl border border-zinc-800 bg-black/90 p-2 text-white shadow-[0_8px_24px_rgba(0,0,0,0.3)]">
+              <span
+                className={`absolute inset-y-1 left-1 w-1 rounded-full ${statusAccentColors[status] ?? "bg-sky-500"}`}
+              />
+              <div className="ml-2 space-y-1">
+                <span className="inline-flex items-center rounded-full border border-white/40 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide">
+                  {channel ?? "Multi"}
+                </span>
+                <p className="text-xs font-semibold leading-tight">{arg.event.title}</p>
+                <p className="text-[10px] text-zinc-300">{personaName ?? "Persona focus"}</p>
+              </div>
             </div>
           );
         }}
@@ -92,6 +114,62 @@ export function CalendarBoard({ events }: Props) {
         }}
       />
       {isPending && <p className="px-3 py-2 text-xs text-muted-foreground">Updating schedule…</p>}
+
+      <style jsx global>{`
+        .planner-calendar .fc {
+          font-family: var(--font-geist-sans, "Inter"), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        }
+        .planner-calendar .fc-scrollgrid,
+        .planner-calendar .fc-scrollgrid table {
+          border: none !important;
+        }
+        .planner-calendar .fc-timegrid-slot,
+        .planner-calendar .fc-col-header-cell,
+        .planner-calendar .fc-daygrid-day,
+        .planner-calendar .fc-timegrid-axis {
+          border-color: #e4e4e7 !important;
+        }
+        .planner-calendar .fc-timegrid-axis {
+          color: #71717a;
+          font-size: 0.68rem;
+          font-weight: 500;
+        }
+        .planner-calendar .fc-timegrid-slot-label-cushion {
+          font-size: 0.68rem;
+        }
+        .planner-calendar .fc-col-header-cell {
+          background: transparent;
+          text-transform: uppercase;
+          font-size: 0.65rem;
+          letter-spacing: 0.08em;
+          color: #71717a;
+        }
+        .planner-calendar .fc-col-header-cell-cushion {
+          padding: 0.75rem 0;
+        }
+        .planner-calendar .fc-timegrid-slot {
+          height: 64px;
+        }
+        .planner-calendar .fc-timegrid-slot-lane {
+          background-color: #ffffff;
+        }
+        .planner-calendar .fc-timegrid-col.fc-day-sun,
+        .planner-calendar .fc-timegrid-col.fc-day-sat,
+        .planner-calendar .fc-col-header-cell.fc-day-sun,
+        .planner-calendar .fc-col-header-cell.fc-day-sat {
+          background-color: #fafafa;
+        }
+        .planner-calendar .fc-timegrid-axis-cushion {
+          padding: 0.5rem;
+        }
+        .planner-calendar .fc-timegrid .fc-daygrid-body {
+          display: none;
+        }
+        .planner-calendar .fc-theme-standard td,
+        .planner-calendar .fc-theme-standard th {
+          border-color: #e4e4e7;
+        }
+      `}</style>
     </div>
   );
 }

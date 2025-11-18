@@ -1,9 +1,6 @@
-import { endOfMonth, startOfMonth } from "date-fns";
-
 import { getWorkspaceContext } from "@/lib/workspace";
 import { withUserContext } from "@/lib/rls";
-
-const MONTHLY_CREDIT_LIMIT = 50000;
+import { getAiCreditUsage, MONTHLY_CREDIT_LIMIT } from "@/lib/ai-credits";
 
 export async function getPlannerData() {
   const { user, activeMembership, memberships } = await getWorkspaceContext();
@@ -22,10 +19,8 @@ export async function getPlannerData() {
   }
 
   const workspaceId = activeMembership.workspaceId;
-  const monthStart = startOfMonth(new Date());
-  const monthEnd = endOfMonth(new Date());
 
-  const [personas, contentItems, tasks, members, usage] = await withUserContext(user.id, (tx) =>
+  const [personas, contentItems, tasks, members] = await withUserContext(user.id, (tx) =>
     Promise.all([
       tx.persona.findMany({
         where: { workspaceId },
@@ -54,17 +49,10 @@ export async function getPlannerData() {
         include: { user: true },
         orderBy: { createdAt: "asc" },
       }),
-      tx.aiUsage.aggregate({
-        _sum: { promptTokens: true, completionTokens: true },
-        where: {
-          workspaceId,
-          createdAt: { gte: monthStart, lte: monthEnd },
-        },
-      }),
     ]),
   );
 
-  const used = (usage._sum.promptTokens ?? 0) + (usage._sum.completionTokens ?? 0);
+  const aiCredits = await getAiCreditUsage(user.id, workspaceId);
 
   return {
     user,
@@ -74,6 +62,6 @@ export async function getPlannerData() {
     contentItems,
     tasks,
     members,
-    aiCredits: { used, limit: MONTHLY_CREDIT_LIMIT },
+    aiCredits,
   } as const;
 }
