@@ -1,0 +1,345 @@
+[
+  {
+    "id": 1,
+    "title": "Authentication & Workspace Foundation",
+    "status": "completed",
+    "details": "Set up Next.js 16 project with TypeScript and Tailwind CSS. Integrate Clerk for email/password and SSO authentication. Configure a Dockerized PostgreSQL database and implement row-level security for workspace isolation. Create user registration flow, workspace creation with custom branding (domains, themes), and role-based permissions system (Admin, Editor, Writer, Viewer). Implement workspace switching and user management interfaces. Set up basic project structure with shadcn UI components.",
+    "priority": "high",
+    "subtasks": [
+      {
+        "id": 1,
+        "title": "Set up Next.js 16 project foundation with TypeScript and UI components",
+        "status": "completed",
+        "details": "Create new Next.js 16 project using create-next-app with TypeScript template. Configure tailwind.config.js with custom theme variables. Install and initialize shadcn/ui components including Button, Input, Card, Dialog, and Form components. Set up proper folder structure with /components, /lib, /app directories. Configure TypeScript strict mode and path aliases.",
+        "description": "Initialize the Next.js 16 project with TypeScript configuration, install and configure Tailwind CSS, and set up shadcn UI component library for consistent design system",
+        "dependencies": [],
+        "testStrategy": "Unit tests for component rendering and TypeScript compilation checks"
+      },
+      {
+        "id": 2,
+        "title": "Integrate Clerk authentication with SSO support",
+        "status": "completed",
+        "details": "Install @clerk/nextjs package and configure environment variables. Set up Clerk provider in app layout and configure middleware for route protection. Implement sign-in, sign-up, and user profile components using Clerk's prebuilt components. Configure SSO providers (Google, Microsoft) in Clerk dashboard. Create authentication wrapper components and hooks for user state management.",
+        "description": "Set up Clerk authentication service with email/password login and SSO integration, configure authentication middleware and protected routes",
+        "dependencies": [
+          1
+        ],
+        "testStrategy": "Integration tests for authentication flows, end-to-end tests for SSO login, and unit tests for auth state management"
+      },
+      {
+        "id": 3,
+        "title": "Configure Dockerized PostgreSQL with row-level security",
+        "status": "completed",
+        "details": "Provision a PostgreSQL container (Docker Compose) and configure environment variables. Design database schema with tables for users, workspaces, workspace_members, and roles. Implement PostgreSQL row-level security (RLS) policies to ensure users can only access data from their workspaces. Set up database client configuration with proper TypeScript types. Create database migrations and seed data for initial setup.",
+        "description": "Set up Docker-hosted PostgreSQL, design database schema for multi-tenant architecture, and implement native row-level security policies for workspace isolation",
+        "dependencies": [
+          2
+        ],
+        "testStrategy": "Database integration tests for RLS policies, unit tests for database queries, and security testing for workspace isolation"
+      },
+      {
+        "id": 4,
+        "title": "Implement workspace creation and management system",
+        "status": "completed",
+        "details": "Build workspace creation form with fields for name, description, custom domain, and theme settings. Implement workspace switching dropdown component in navigation. Create workspace settings page for branding customization (logo upload, color themes, custom domains). Build workspace invitation system with email invites. Implement workspace deletion and transfer ownership functionality.",
+        "description": "Create workspace creation flow with custom branding options, implement workspace switching functionality, and build workspace settings management interface",
+        "dependencies": [
+          3
+        ],
+        "testStrategy": "End-to-end tests for workspace creation flow, unit tests for workspace switching, and integration tests for branding customization"
+      },
+      {
+        "id": 5,
+        "title": "Build role-based access control system and user management",
+        "status": "completed",
+        "details": "Define permission matrix for each role (Admin: full access, Editor: content management, Writer: content creation, Viewer: read-only). Create role assignment and management components. Build user management dashboard for admins to invite, remove, and change user roles. Implement permission checks throughout the application using custom hooks and middleware. Create role-based navigation and feature visibility controls.",
+        "description": "Implement comprehensive role-based permissions system with Admin, Editor, Writer, and Viewer roles, and create user management interface for workspace administrators",
+        "dependencies": [
+          4
+        ],
+        "testStrategy": "Unit tests for permission checks, integration tests for role assignment, and security testing for access control enforcement"
+      }
+    ],
+    "description": "Implement user authentication system with Clerk SSO integration and multi-tenant workspace architecture with role-based access control",
+    "dependencies": [],
+    "testStrategy": "Unit tests for authentication flows, integration tests for workspace isolation, end-to-end tests for user registration and SSO login, security testing for role-based access controls"
+  },
+  {
+    "id": 2,
+    "title": "Content Planning & Calendar System",
+    "status": "pending",
+    "details": "Develop content calendar with month/week/day views using a calendar component library. Integrate OpenRouter with GPT-4o and Claude 3.5 Sonnet for AI headline and outline suggestions. Implement persona/ICP management system for AI context. Create task assignment functionality with due dates and status tracking. Build content planning interface with drag-and-drop scheduling. Implement AI credit tracking and usage monitoring system with subscription tier management.",
+    "priority": "high",
+    "subtasks": [
+      {
+        "id": 1,
+        "title": "Implement Core Calendar Component System",
+        "status": "completed",
+        "details": "Select and integrate a calendar component library (such as FullCalendar or React Big Calendar). Implement view switching functionality between month/week/day modes. Create responsive calendar layout with proper date navigation controls. Set up basic event display structure and calendar state management. Ensure calendar can handle content item placement and basic interactions.",
+        "description": "Build the foundational calendar interface with month, week, and day view capabilities using a calendar component library. Create the basic UI structure and navigation between different calendar views.",
+        "dependencies": [],
+        "testStrategy": "Component tests for calendar rendering, view switching functionality, and responsive behavior across different screen sizes"
+      },
+      {
+        "id": 2,
+        "title": "Build Persona and ICP Management System",
+        "status": "completed",
+        "details": "Design database schema for storing persona profiles including demographics, pain points, goals, and content preferences. Build CRUD interface for creating, editing, and managing multiple personas. Implement persona categorization and tagging system. Create persona selection interface for content planning context. Build validation and data integrity checks for persona data.",
+        "description": "Create a comprehensive persona and Ideal Customer Profile (ICP) management system that will provide context for AI-powered content suggestions and planning.",
+        "dependencies": [],
+        "testStrategy": "Unit tests for persona CRUD operations, integration tests for data persistence, and user acceptance tests for persona management workflows"
+      },
+      {
+        "id": 3,
+        "title": "Integrate AI Content Planning with OpenRouter",
+        "status": "completed",
+        "details": "Configure OpenRouter API client with proper authentication and error handling. Implement AI service layer with support for multiple models (GPT-4o, Claude 3.5 Sonnet). Create prompt engineering system that incorporates persona context for content suggestions. Build headline generation and outline creation endpoints. Implement model selection logic and fallback mechanisms. Add response parsing and formatting for AI-generated content.",
+        "description": "Set up OpenRouter integration with GPT-4o and Claude 3.5 Sonnet to provide AI-powered headline generation, content outline suggestions, and planning recommendations based on selected personas.",
+        "dependencies": [
+          2
+        ],
+        "testStrategy": "API tests for OpenRouter integration, unit tests for prompt generation, performance tests for AI response times, and integration tests for persona-context incorporation"
+      },
+      {
+        "id": 4,
+        "title": "Develop Content Planning and Scheduling Interface",
+        "status": "completed",
+        "details": "Implement drag-and-drop functionality for content items on calendar views. Create content item creation modal with AI suggestion integration. Build content scheduling logic with conflict detection and validation. Implement content item editing and rescheduling capabilities. Add bulk scheduling operations and content series planning. Create visual indicators for different content types and statuses on calendar.",
+        "description": "Create an intuitive drag-and-drop content planning interface that allows users to schedule content items on the calendar with AI-suggested headlines and outlines.",
+        "dependencies": [
+          1,
+          3
+        ],
+        "testStrategy": "User acceptance tests for drag-and-drop workflows, integration tests for content scheduling logic, and usability tests for content planning interface"
+      },
+      {
+        "id": 5,
+        "title": "Implement Task Management and AI Credit Tracking System",
+        "status": "pending",
+        "details": "Create task assignment system with user roles and permissions. Implement due date management with notification system. Build status tracking with workflow states (pending, in-progress, completed, etc.). Develop AI credit tracking system that monitors API usage across different models. Implement subscription tier management with credit limits and usage alerts. Create usage analytics dashboard and billing integration preparation. Add credit renewal and overage handling logic.",
+        "description": "Build comprehensive task assignment functionality with due dates, status tracking, and implement AI credit usage monitoring with subscription tier management.",
+        "dependencies": [
+          3,
+          4
+        ],
+        "testStrategy": "Unit tests for task management CRUD operations, integration tests for AI credit tracking accuracy, performance tests for usage monitoring, and end-to-end tests for subscription tier enforcement"
+      }
+    ],
+    "description": "Build centralized content calendar with AI-powered planning features and task management capabilities",
+    "dependencies": [
+      1
+    ],
+    "testStrategy": "Component tests for calendar views, API tests for AI integration, user acceptance tests for content planning workflows, performance tests for AI response times"
+  },
+  {
+    "id": 3,
+    "title": "AI-Powered Content Editor & Collaboration",
+    "status": "completed",
+    "details": "Delivered Editor.js-based real-time editor powered by Liveblocks rooms with shared storage, presence indicators, and collaborative cursors. Added AI sidebar for SEO/tone/persona suggestions via OpenRouter, implemented database-backed version history with restore actions, threaded comments with resolve workflows, autosave + local draft recovery, and reusable content templates.",
+    "priority": "high",
+    "subtasks": [
+      {
+        "id": 1,
+        "title": "Implement Rich Text Editor Foundation with Real-time Collaboration",
+        "status": "completed",
+        "details": "Integrated Editor.js with custom React wrapper tied to Liveblocks storage to synchronize block data, cursors, and presence between users. Added dedicated /app/editor routes, collaborative room provider, and UI shell showing active collaborators with conflict-safe updates.",
+        "description": "Build the core Editor.js experience and integrate Liveblocks.io for real-time collaborative editing capabilities including presence indicators and conflict resolution.",
+        "dependencies": [],
+        "testStrategy": "Real-time collaboration stress tests with multiple concurrent users, conflict resolution scenario testing, WebSocket connection stability tests"
+      },
+      {
+        "id": 2,
+        "title": "Develop Version Control System with Database Snapshots",
+        "status": "completed",
+        "details": "Extended Prisma schema with content_versions table, built server actions for saving snapshots and restoring previous revisions, and exposed a version history sidebar showing author/timestamps with restore controls.",
+        "description": "Implement comprehensive version history tracking with database snapshots, rollback functionality, and change tracking for all document modifications.",
+        "dependencies": [
+          1
+        ],
+        "testStrategy": "Version control functionality tests, rollback accuracy verification, database performance tests for large version histories"
+      },
+      {
+        "id": 3,
+        "title": "Integrate AI Models for Content Optimization and SEO",
+        "status": "completed",
+        "details": "Hooked AI sidebar to new generateEditorSuggestionsAction leveraging OpenRouter GPT-4o mini with persona-aware prompts. Displays SEO/tone/persona feedback, headlines, outlines, and actionable tip lists directly beside the editor.",
+        "description": "Implement AI-powered features including inline SEO suggestions, tone controls, persona targeting, and content optimization recommendations using appropriate AI APIs.",
+        "dependencies": [
+          1
+        ],
+        "testStrategy": "AI integration tests, SEO suggestion accuracy validation, performance tests for AI API response times"
+      },
+      {
+        "id": 4,
+        "title": "Build Collaborative Features and Comment System",
+        "status": "completed",
+        "details": "Added database-backed comment_threads + comments models with server actions for creating, replying, and resolving threads. UI surfaces highlighted anchors, thread status, and role-respecting actions alongside the editor canvas.",
+        "description": "Develop inline commenting system, collaborative review workflows, and advanced collaboration features to enhance team productivity and content review processes.",
+        "dependencies": [
+          1,
+          2
+        ],
+        "testStrategy": "Comment system functionality tests, collaborative workflow validation, user permission verification"
+      },
+      {
+        "id": 5,
+        "title": "Implement Autosave and Offline Draft Recovery",
+        "status": "completed",
+        "details": "Debounced autosave persists editor state to PostgreSQL every ~2s while mirroring to localStorage for offline recovery. Added status indicator, recovery detection, and template library with quick-apply buttons plus server-side template persistence.",
+        "description": "Develop robust autosave functionality with 10-second intervals, offline draft recovery, and content templates system to ensure data integrity and user experience continuity.",
+        "dependencies": [
+          1,
+          2,
+          3
+        ],
+        "testStrategy": "Autosave reliability tests, offline functionality validation, draft recovery accuracy verification, editor performance benchmarks"
+      }
+    ],
+    "description": "Develop real-time collaborative content editor with AI assistance, SEO optimization, and version control",
+    "dependencies": [
+      1,
+      2
+    ],
+    "testStrategy": "Real-time collaboration stress tests, AI integration tests, version control functionality tests, editor performance benchmarks, conflict resolution scenario testing"
+  },
+  {
+    "id": 4,
+    "title": "Approval Workflow & Multi-Channel Distribution",
+    "status": "completed",
+    "details": "Build approval workflow with Editor and Manager review stages. Integrate email and Slack notifications for approval requests and status updates. Create approval queue interface with status tracking and inline review capabilities. Develop multi-channel distribution system for Webflow, WordPress, LinkedIn, Facebook, Instagram, Reddit, Mailchimp, and Substack. Implement channel-specific content adaptation (formatting, image sizing, metadata). Build scheduling system for immediate and future publishing with preview modes for each platform.",
+    "priority": "medium",
+    "subtasks": [
+      {
+        "id": 1,
+        "title": "Implement Two-Step Approval Workflow System",
+        "status": "completed",
+        "details": "Build a state machine for approval workflow with states: Draft, Editor Review, Manager Review, Approved, Rejected. Implement database schema for approval records with timestamps, reviewer assignments, and status tracking. Create workflow transition logic with proper validation and role-based permissions. Include approval history tracking and audit trail functionality.",
+        "description": "Create the core approval workflow engine with Editor and Manager review stages, including state management and transition logic",
+        "dependencies": [],
+        "testStrategy": "Unit tests for state transitions, integration tests for workflow progression, role permission validation tests"
+      },
+      {
+        "id": 2,
+        "title": "Build Approval Queue Interface with Review Capabilities",
+        "status": "completed",
+        "details": "Create approval dashboard showing pending items by role (Editor/Manager). Implement inline editing and commenting system for reviewers. Build status indicators and progress tracking UI. Add filtering and sorting capabilities by date, priority, and status. Include bulk approval actions and assignment management interface.",
+        "description": "Develop the user interface for managing approval queues with inline review, commenting, and status tracking features",
+        "dependencies": [
+          1
+        ],
+        "testStrategy": "UI component tests, user interaction tests, accessibility compliance tests, responsive design validation"
+      },
+      {
+        "id": 3,
+        "title": "Integrate Email and Slack Notification System",
+        "status": "completed",
+        "details": "Set up email templates for approval requests, approvals, rejections, and reminders. Integrate Slack API for real-time notifications with interactive buttons for quick actions. Implement notification preferences and delivery scheduling. Create notification queue system with retry logic and delivery confirmation. Add digest notifications for batch updates.",
+        "description": "Implement comprehensive notification system for approval requests, status updates, and workflow events across email and Slack channels",
+        "dependencies": [
+          1
+        ],
+        "testStrategy": "Notification delivery tests, template rendering validation, Slack integration tests, delivery failure handling tests"
+      },
+      {
+        "id": 4,
+        "title": "Develop Multi-Platform Content Distribution System",
+        "status": "completed",
+        "details": "Implement API clients for each platform with authentication handling and rate limiting. Create content adaptation engine for platform-specific formatting, image sizing, and metadata requirements. Build distribution queue system with retry logic and error handling. Implement platform-specific validation and content optimization. Add support for cross-posting coordination and duplicate detection.",
+        "description": "Create the core distribution engine supporting Webflow, WordPress, LinkedIn, Facebook, Instagram, Reddit, Mailchimp, and Substack with platform-specific API integrations",
+        "dependencies": [
+          1
+        ],
+        "testStrategy": "Platform integration tests, API authentication tests, content adaptation validation, rate limiting compliance tests"
+      },
+      {
+        "id": 5,
+        "title": "Build Scheduling and Preview System",
+        "status": "completed",
+        "details": "Create scheduling interface with calendar view and time zone support. Implement job queue system for delayed publishing with cron-like scheduling. Build preview generation for each platform showing how content will appear. Add scheduling conflict detection and resolution. Implement bulk scheduling and recurring post capabilities with template support.",
+        "description": "Implement comprehensive scheduling system for immediate and future publishing with platform-specific preview capabilities and content validation",
+        "dependencies": [
+          2,
+          4
+        ],
+        "testStrategy": "Scheduling reliability tests, preview accuracy validation, time zone handling tests, job queue performance tests"
+      }
+    ],
+    "description": "Implement two-step approval system with notifications and multi-platform content distribution capabilities",
+    "dependencies": [
+      1,
+      3
+    ],
+    "testStrategy": "Workflow state machine tests, notification delivery tests, platform integration tests, content adaptation validation, publishing schedule reliability tests"
+  },
+  {
+    "id": 5,
+    "title": "Analytics Dashboard & Compliance Features",
+    "status": "completed",
+    "details": "Develop analytics dashboard aggregating metrics from Google Search Console, GA4, and Microsoft Webmaster. Implement channel-specific KPIs tracking (CTR, time on page, conversions, engagement, open rates). Create competitor tracking and automated gap analysis reports. Build AI-driven optimization suggestions based on performance data. Implement GDPR/CCPA compliance features including data export, deletion workflows, consent management, and privacy controls. Add security features with data encryption and audit logging.",
+    "priority": "medium",
+    "subtasks": [
+      {
+        "id": 1,
+        "title": "Third-party Analytics API Integration",
+        "status": "completed",
+        "details": "Set up OAuth2 authentication for each service, create API clients with proper error handling and rate limiting, implement data fetching services with retry mechanisms, establish data normalization layer to standardize metrics across platforms, create scheduled jobs for regular data synchronization",
+        "description": "Integrate with Google Search Console, GA4, and Microsoft Webmaster APIs to collect raw analytics data and establish secure data pipelines",
+        "dependencies": [],
+        "testStrategy": "API integration tests, authentication flow validation, data fetching accuracy tests, rate limiting compliance verification"
+      },
+      {
+        "id": 2,
+        "title": "Analytics Dashboard UI and Data Visualization",
+        "status": "completed",
+        "details": "Create dashboard layout with customizable widget system, implement interactive charts using libraries like Chart.js or D3.js, build KPI cards for CTR, time on page, conversions, engagement rates, and email open rates, add filtering and date range selection capabilities, implement real-time data updates with WebSocket connections",
+        "description": "Build responsive dashboard interface with interactive charts and KPI widgets for displaying channel-specific metrics and performance data",
+        "dependencies": [
+          1
+        ],
+        "testStrategy": "UI component testing, chart rendering validation, responsive design tests, performance monitoring for dashboard load times"
+      },
+      {
+        "id": 3,
+        "title": "Competitor Tracking and Gap Analysis System",
+        "status": "completed",
+        "details": "Create competitor data collection services using web scraping and third-party tools like SEMrush or Ahrefs APIs, implement automated gap analysis algorithms to identify performance differences, build comparison reports with actionable insights, create alerting system for significant competitor changes, develop trend analysis for competitive positioning",
+        "description": "Develop automated competitor monitoring system with gap analysis reporting and performance comparison features",
+        "dependencies": [
+          1
+        ],
+        "testStrategy": "Data accuracy validation, competitor tracking reliability tests, gap analysis algorithm verification, report generation testing"
+      },
+      {
+        "id": 4,
+        "title": "AI-Driven Optimization Recommendations Engine",
+        "status": "completed",
+        "details": "Implement ML models for pattern recognition in analytics data, create recommendation algorithms based on historical performance trends, build natural language generation for human-readable suggestions, develop scoring system for recommendation priority, integrate with dashboard to display contextual optimization tips, create feedback loop to improve recommendation accuracy",
+        "description": "Build machine learning system that analyzes performance data to generate automated optimization suggestions and actionable insights",
+        "dependencies": [
+          1,
+          2,
+          3
+        ],
+        "testStrategy": "ML model accuracy testing, recommendation relevance validation, A/B testing for suggestion effectiveness, performance impact measurement"
+      },
+      {
+        "id": 5,
+        "title": "GDPR/CCPA Compliance and Security Framework",
+        "status": "completed",
+        "details": "Build consent management system with granular privacy controls, implement data export functionality for user data portability, create secure data deletion workflows with verification, add end-to-end encryption for sensitive data storage and transmission, implement comprehensive audit logging for all data access and modifications, create privacy dashboard for users to manage their data preferences, ensure compliance with GDPR Article 17 (right to erasure) and CCPA requirements",
+        "description": "Implement comprehensive data privacy compliance features including consent management, data export/deletion workflows, encryption, and audit logging",
+        "dependencies": [
+          1,
+          2
+        ],
+        "testStrategy": "Compliance workflow validation, data export/deletion verification, encryption strength testing, audit log integrity checks, security penetration testing"
+      }
+    ],
+    "description": "Build comprehensive analytics system with third-party integrations and implement GDPR/CCPA compliance features",
+    "dependencies": [
+      1,
+      4
+    ],
+    "testStrategy": "Analytics data accuracy tests, third-party API integration tests, compliance workflow validation, security audit tests, performance monitoring for dashboard load times"
+  }
+]

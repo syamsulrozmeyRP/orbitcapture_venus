@@ -1,0 +1,554 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum WorkspaceRole {
+  ADMIN
+  EDITOR
+  WRITER
+  VIEWER
+}
+
+enum MembershipStatus {
+  INVITED
+  ACTIVE
+  SUSPENDED
+}
+
+enum ContentStatus {
+  IDEA
+  BRIEFING
+  READY
+  IN_REVIEW
+  APPROVED
+  SCHEDULED
+  PUBLISHED
+}
+
+enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  BLOCKED
+}
+
+enum ApprovalState {
+  DRAFT
+  EDITOR_REVIEW
+  MANAGER_REVIEW
+  APPROVED
+  REJECTED
+}
+
+enum ApprovalEventType {
+  SUBMITTED
+  MOVED_TO_EDITOR
+  MOVED_TO_MANAGER
+  APPROVED
+  REJECTED
+  COMMENT
+}
+
+enum NotificationChannel {
+  EMAIL
+  SLACK
+}
+
+enum NotificationStatus {
+  QUEUED
+  SENT
+  FAILED
+}
+
+enum DistributionChannel {
+  WEBFLOW
+  WORDPRESS
+  LINKEDIN
+  FACEBOOK
+  INSTAGRAM
+  REDDIT
+  MAILCHIMP
+  SUBSTACK
+}
+
+enum DistributionStatus {
+  DRAFT
+  READY
+  QUEUED
+  SCHEDULED
+  SENDING
+  SENT
+  FAILED
+}
+
+enum AnalyticsProvider {
+  GOOGLE_SEARCH_CONSOLE
+  GA4
+  MICROSOFT_WEBMASTER
+}
+
+enum AnalyticsIntegrationStatus {
+  DISCONNECTED
+  CONNECTED
+  ERROR
+}
+
+enum PrivacyRequestType {
+  EXPORT
+  DELETE
+}
+
+enum PrivacyRequestStatus {
+  RECEIVED
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+}
+
+enum ComplianceEventType {
+  CONSENT_CAPTURED
+  DATA_EXPORT
+  DATA_ERASURE
+  ACCESS_AUDIT
+}
+
+model User {
+  id              String             @id @default(cuid())
+  clerkId         String             @unique
+  email           String             @unique
+  firstName       String?
+  lastName        String?
+  imageUrl        String?
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+  memberships     WorkspaceMember[]
+  ownedWorkspaces Workspace[]        @relation("OwnerWorkspaces")
+  personas        Persona[]          @relation("PersonaCreatedBy")
+  contentItems    ContentItem[]      @relation("ContentItemAuthor")
+  assignedTasks   ContentTask[]      @relation("TaskAssignee")
+  contentVersions ContentVersion[]   @relation("VersionAuthor")
+  commentThreads  CommentThread[]    @relation("ThreadAuthor")
+  comments        Comment[]          @relation("CommentAuthor")
+  approvalRequests ApprovalRequest[] @relation("ApprovalRequester")
+  editorApprovals  ApprovalRequest[] @relation("ApprovalEditor")
+  managerApprovals ApprovalRequest[] @relation("ApprovalManager")
+  approvalEvents   ApprovalEvent[]   @relation("ApprovalEventAuthor")
+  notificationRecipients WorkflowNotification[] @relation("NotificationRecipient")
+}
+
+model Workspace {
+  id          String             @id @default(cuid())
+  name        String
+  slug        String             @unique
+  description String?
+  theme       Json?
+  ownerId     String
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  owner       User               @relation("OwnerWorkspaces", fields: [ownerId], references: [id])
+  members     WorkspaceMember[]
+  invites     WorkspaceInvite[]
+  personas    Persona[]
+  content     ContentItem[]
+  tasks       ContentTask[]
+  aiUsage     AiUsage[]
+  templates   ContentTemplate[]
+  approvalRequests ApprovalRequest[]
+  notificationSettings NotificationSetting[]
+  workflowNotifications WorkflowNotification[]
+  distributionProfiles DistributionProfile[]
+  distributionJobs DistributionJob[]
+  analyticsIntegrations AnalyticsIntegration[]
+  analyticsSnapshots AnalyticsSnapshot[]
+  channelMetrics ChannelMetric[]
+  competitorSnapshots CompetitorSnapshot[]
+  consentPreferences ConsentPreference[]
+  privacyRequests PrivacyRequest[]
+  complianceEvents ComplianceEvent[]
+}
+
+model WorkspaceMember {
+  id          String           @id @default(cuid())
+  workspaceId String
+  userId      String
+  role        WorkspaceRole    @default(WRITER)
+  status      MembershipStatus @default(ACTIVE)
+  createdAt   DateTime         @default(now())
+  workspace   Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, userId])
+}
+
+model WorkspaceInvite {
+  id          String        @id @default(cuid())
+  workspaceId String
+  email       String
+  role        WorkspaceRole @default(WRITER)
+  token       String        @unique
+  expiresAt   DateTime
+  invitedById String
+  createdAt   DateTime      @default(now())
+  workspace   Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model Persona {
+  id           String     @id @default(cuid())
+  workspaceId  String
+  createdById  String
+  name         String
+  jobTitle     String?
+  industry     String?
+  pains        String?
+  goals        String?
+  voice        String?
+  audienceTags String[]   @default([])
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  workspace    Workspace  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  createdBy    User       @relation("PersonaCreatedBy", fields: [createdById], references: [id])
+  content      ContentItem[]
+
+  @@index([workspaceId])
+}
+
+model ContentItem {
+  id            String        @id @default(cuid())
+  workspaceId   String
+  createdById   String
+  personaId     String?
+  title         String
+  description   String?
+  channel       String?
+  status        ContentStatus @default(IDEA)
+  scheduledAt   DateTime?
+  aiHeadline    String?
+  aiOutline     String?
+  brief         Json?
+  body          Json?
+  lastAutosavedAt DateTime?
+  templateId    String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  workspace     Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  createdBy     User          @relation("ContentItemAuthor", fields: [createdById], references: [id])
+  persona       Persona?      @relation(fields: [personaId], references: [id])
+  tasks         ContentTask[]
+  versions      ContentVersion[]
+  commentThreads CommentThread[]
+  template      ContentTemplate? @relation(fields: [templateId], references: [id])
+  approvalRequest ApprovalRequest?
+  distributionJobs DistributionJob[]
+
+  @@index([workspaceId])
+  @@index([scheduledAt])
+}
+
+model ContentVersion {
+  id            String      @id @default(cuid())
+  contentItemId String
+  createdById   String
+  summary       String?
+  data          Json
+  createdAt     DateTime    @default(now())
+  contentItem   ContentItem @relation(fields: [contentItemId], references: [id], onDelete: Cascade)
+  createdBy     User        @relation("VersionAuthor", fields: [createdById], references: [id])
+
+  @@index([contentItemId])
+}
+
+model CommentThread {
+  id            String      @id @default(cuid())
+  contentItemId String
+  authorId      String
+  anchor        Json
+  resolved      Boolean     @default(false)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  contentItem   ContentItem @relation(fields: [contentItemId], references: [id], onDelete: Cascade)
+  author        User        @relation("ThreadAuthor", fields: [authorId], references: [id])
+  comments      Comment[]
+
+  @@index([contentItemId])
+}
+
+model Comment {
+  id        String         @id @default(cuid())
+  threadId  String
+  authorId  String
+  body      String
+  createdAt DateTime       @default(now())
+  thread    CommentThread  @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  author    User           @relation("CommentAuthor", fields: [authorId], references: [id])
+}
+
+model ContentTemplate {
+  id          String    @id @default(cuid())
+  workspaceId String
+  name        String
+  description String?
+  body        Json
+  createdAt   DateTime  @default(now())
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  content     ContentItem[]
+}
+
+model ContentTask {
+  id            String      @id @default(cuid())
+  workspaceId   String
+  contentItemId String
+  assigneeId    String?
+  title         String
+  description   String?
+  status        TaskStatus  @default(PENDING)
+  dueDate       DateTime?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  workspace     Workspace   @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  contentItem   ContentItem @relation(fields: [contentItemId], references: [id], onDelete: Cascade)
+  assignee      User?       @relation("TaskAssignee", fields: [assigneeId], references: [id])
+
+  @@index([workspaceId])
+  @@index([status])
+}
+
+model AiUsage {
+  id          String    @id @default(cuid())
+  workspaceId String
+  model       String
+  promptTokens Int      @default(0)
+  completionTokens Int  @default(0)
+  createdAt   DateTime  @default(now())
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, createdAt])
+}
+
+model ApprovalRequest {
+  id               String         @id @default(cuid())
+  workspaceId      String
+  contentItemId    String         @unique
+  requestedById    String
+  editorReviewerId String?
+  managerReviewerId String?
+  state            ApprovalState  @default(DRAFT)
+  rejectionReason  String?
+  submittedAt      DateTime?
+  editorReviewedAt DateTime?
+  managerReviewedAt DateTime?
+  approvedAt       DateTime?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  workspace        Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  contentItem      ContentItem    @relation(fields: [contentItemId], references: [id], onDelete: Cascade)
+  requestedBy      User           @relation("ApprovalRequester", fields: [requestedById], references: [id])
+  editorReviewer   User?          @relation("ApprovalEditor", fields: [editorReviewerId], references: [id])
+  managerReviewer  User?          @relation("ApprovalManager", fields: [managerReviewerId], references: [id])
+  events           ApprovalEvent[]
+  notifications    WorkflowNotification[]
+  distributionJobs DistributionJob[]
+
+  @@index([workspaceId])
+  @@index([state])
+}
+
+model ApprovalEvent {
+  id                String           @id @default(cuid())
+  approvalRequestId String
+  authorId          String
+  type              ApprovalEventType
+  comment           String?
+  metadata          Json?
+  createdAt         DateTime         @default(now())
+  approvalRequest   ApprovalRequest  @relation(fields: [approvalRequestId], references: [id], onDelete: Cascade)
+  author            User             @relation("ApprovalEventAuthor", fields: [authorId], references: [id])
+
+  @@index([approvalRequestId])
+}
+
+model NotificationSetting {
+  id          String             @id @default(cuid())
+  workspaceId String
+  channel     NotificationChannel
+  isEnabled   Boolean            @default(true)
+  config      Json?
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  workspace   Workspace          @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, channel])
+}
+
+model WorkflowNotification {
+  id                String             @id @default(cuid())
+  workspaceId       String
+  approvalRequestId String?
+  recipientId       String?
+  channel           NotificationChannel
+  status            NotificationStatus @default(QUEUED)
+  payload           Json
+  error             String?
+  sentAt            DateTime?
+  createdAt         DateTime           @default(now())
+  workspace         Workspace          @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  approvalRequest   ApprovalRequest?   @relation(fields: [approvalRequestId], references: [id])
+  recipient         User?              @relation("NotificationRecipient", fields: [recipientId], references: [id])
+
+  @@index([workspaceId, createdAt])
+  @@index([status])
+}
+
+model AnalyticsIntegration {
+  id          String                     @id @default(cuid())
+  workspaceId String
+  provider    AnalyticsProvider
+  status      AnalyticsIntegrationStatus @default(DISCONNECTED)
+  scopes      String[]                   @default([])
+  metadata    Json?
+  lastSyncedAt DateTime?
+  createdAt   DateTime                   @default(now())
+  updatedAt   DateTime                   @updatedAt
+  workspace   Workspace                  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  snapshots   AnalyticsSnapshot[]
+
+  @@unique([workspaceId, provider])
+}
+
+model AnalyticsSnapshot {
+  id            String            @id @default(cuid())
+  workspaceId   String
+  integrationId String?
+  provider      AnalyticsProvider
+  rangeStart    DateTime
+  rangeEnd      DateTime
+  metrics       Json
+  channels      Json?
+  createdAt     DateTime          @default(now())
+  workspace     Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  integration   AnalyticsIntegration? @relation(fields: [integrationId], references: [id])
+
+  @@index([workspaceId, provider, rangeEnd])
+}
+
+model ChannelMetric {
+  id            String              @id @default(cuid())
+  workspaceId   String
+  channel       DistributionChannel?
+  label         String
+  ctr           Float?
+  conversions   Int?
+  engagementRate Float?
+  avgTimeOnPage Int?
+  revenue       Float?
+  periodStart   DateTime
+  periodEnd     DateTime
+  metrics       Json?
+  createdAt     DateTime            @default(now())
+  workspace     Workspace           @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, periodEnd])
+}
+
+model CompetitorSnapshot {
+  id             String    @id @default(cuid())
+  workspaceId    String
+  competitorName String
+  shareOfVoice   Float
+  avgPosition    Float?
+  gapScore       Int
+  summary        String?
+  recommendations Json?
+  capturedAt     DateTime  @default(now())
+  workspace      Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, capturedAt])
+}
+
+model ConsentPreference {
+  id          String    @id @default(cuid())
+  workspaceId String
+  personEmail String
+  preferences Json
+  source      String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, personEmail])
+}
+
+model PrivacyRequest {
+  id             String               @id @default(cuid())
+  workspaceId    String
+  requesterEmail String
+  type           PrivacyRequestType
+  status         PrivacyRequestStatus @default(RECEIVED)
+  reason         String?
+  payload        Json?
+  processedAt    DateTime?
+  createdAt      DateTime            @default(now())
+  workspace      Workspace           @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  events         ComplianceEvent[]
+
+  @@index([workspaceId, status])
+}
+
+model ComplianceEvent {
+  id               String              @id @default(cuid())
+  workspaceId      String
+  type             ComplianceEventType
+  description      String?
+  actorEmail       String?
+  metadata         Json?
+  createdAt        DateTime            @default(now())
+  workspace        Workspace           @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  privacyRequestId String?
+  privacyRequest   PrivacyRequest?     @relation(fields: [privacyRequestId], references: [id])
+
+  @@index([workspaceId, createdAt])
+}
+
+model DistributionProfile {
+  id          String              @id @default(cuid())
+  workspaceId String
+  channel     DistributionChannel
+  label       String?
+  config      Json
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  workspace   Workspace           @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  jobs        DistributionJob[]
+
+  @@unique([workspaceId, channel])
+}
+
+model DistributionJob {
+  id                String              @id @default(cuid())
+  workspaceId       String
+  contentItemId     String
+  approvalRequestId String?
+  profileId         String?
+  channel           DistributionChannel
+  status            DistributionStatus   @default(DRAFT)
+  scheduledFor      DateTime?
+  payload           Json?
+  result            Json?
+  error             String?
+  attempts          Int                 @default(0)
+  lastAttemptAt     DateTime?
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  workspace         Workspace           @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  contentItem       ContentItem         @relation(fields: [contentItemId], references: [id], onDelete: Cascade)
+  approvalRequest   ApprovalRequest?    @relation(fields: [approvalRequestId], references: [id])
+  profile           DistributionProfile? @relation(fields: [profileId], references: [id])
+
+  @@index([workspaceId])
+  @@index([status])
+  @@index([scheduledFor])
+}

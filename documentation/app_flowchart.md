@@ -1,0 +1,10 @@
+flowchart TD
+    A[User Authentication and Onboarding] --> B[Workspace and Role Selection]
+    B --> C[Dashboard Overview]
+    C --> D[Content Planning and Scheduling]
+    D --> E[Content Creation and Optimization]
+    E --> F[Approval Workflow]
+    F --> G[Distribution Center]
+    G --> H[Analytics and Insights]
+    H --> I[Persona and Competitor Management]
+    I --> J[Settings and Integrations]
